@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Michael Lu  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Michael Lu</h2>
+
+    <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+        <p>For ray generation, I compute a random point inside the pixel using the sampler get_sample() funtion and cast a ray from the camera into world space.</p>
+        <p>As for the primitive intersections, I calculated the intersection points of the ray with the surface of the sphere or plane of the triangle, made sure the intersection point is in bounds, and set/return fields appropriately.</p>
+        <p>The triangle intersection algorithm I implemented is the Moller Trumbore algorithm. The Moller Trumbore algorithm takes advantage of barycentric coordinates of a triangle as well as the parameterization of a ray to solve out vector equation using matrix and vector manipulations.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/CBspheres1.png" width="480px" />
+                    <figcaption align="middle">Cornell Box: spheres</figcaption>
+                    <td align="middle">
+                    <img src="images/CBgems1.png" width="480px" />
+                    <figcaption align="middle">Cornell Box: gems</figcaption>
+                </tr>
+            </table>
+        </div>
+
+    <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+        <p>For my BVH construction algorithm, I check to see if the current node is a leaf node. If not, I split the bounding box in half based on the box's largest dimension. Then I sort the primitives on either side of the split threshold and recurse on each side to obtain a set of leaf nodes.</p>
+        <p>For my BVH intersection algorithm, I first check to see if the ray intersects the group bounding box. If it does, and the node is a leaf, I iterate through the primitives in the node to check for intersections, letting the intersect functions I wrote for Part 1 handle the assignments for me. If the node is not a leaf, then I recurse into the child nodes.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/maxplanck2.png" width="480px" />
+                    <figcaption align="middle">maxplanck head</figcaption>
+                    <td align="middle">
+                    <img src="images/CBlucy2.png" width="480px" />
+                    <figcaption align="middle">Cornell Box: Lucy</figcaption>
+                </tr>
+            </table>
+        </div>
+
+        <p>Without the acceleration structure, the cow took 1178 seconds to render, casting 473033 rays and averaging 5335 intersection tests per ray. The teapot took 423 seconds to render, casting 473211 rays and averaging 2190 intersection tests per ray. After implementing the BVH acceleration structure, the cow took 1.99 seconds to render, casting 478498 rays and averaging 3.26 intersection tests per ray. The teapot took 1.86 seconds to render, casting 476777 rays and averaging 2.73 intersection tests per ray.</p>
+        <p>Instead of checking for intersection with every primitive object in the scene, the BVH structure separates the objects into a tree stucture, meaning we run, on average, in O(log(n)) time to search for an intersection leaf bounding box and max_leaf_size intersection tests with primitives in that leaf node. This is significantly better than running n intersection tests per ray.</p>
+
+    <h2 align="middle">Part 3: Direct Illumination</h2>
+        <p>For the hemisphere direct lighting function, I took num_sample samples on a uniform hemisphere and casted rays in each direction. Then I check if the rays hit anything, and if they do, convert the incoming radiance from the intersection point into outgoing irradiance by multiplying by the BSDF and the cosine term from Lambert's cosine law, while averaging the total irradiance.</p>
+        <p>For the importance direct lighting function, I looped through each scene light, and sampled rays from the hit point to the scene light. Then I make sure that the light is on the correct side of the intersection point and compute the shadow ray by checking for objects between the hit point and the light. Finally, I sum up all appropriate irradiance values according to the Monte Carlo integration.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/CBbunny_16_8.png" width="480px" />
+                    <figcaption align="middle">Hemisphere Lighting: Bunny 16/8</figcaption>
+                    <td align="middle">
+                    <img src="images/CBbunny_64_32.png" width="480px" />
+                    <figcaption align="middle">Hemisphere Lighting: Bunny 64/32</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/bunny_64_32.png" width="480px" />
+                    <figcaption align="middle">Importance Lighting: Bunny 64/32</figcaption>
+                    <td align="middle">
+                    <img src="images/dragon_64_32.png" width="480px" />
+                    <figcaption align="middle">Importance Lighting: Dragon 64/32</figcaption>
+                </tr>
+            </table>
+        </div>
+
+        <p>As you increase the number of light rays, the noise the shadows significantly decreases, and the overall picture is cleaner.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/spheres1.png" width="480px" />
+                    <figcaption align="middle">Spheres: 1 light ray</figcaption>
+                    <td align="middle">
+                    <img src="images/spheres4.png" width="480px" />
+                    <figcaption align="middle">Spheres: 4 light rays</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/spheres16.png" width="480px" />
+                    <figcaption align="middle">Spheres: 16 light rays</figcaption>
+                    <td align="middle">
+                    <img src="images/spheres64.png" width="480px" />
+                    <figcaption align="middle">Spheres: 64 light rays</figcaption>
+                </tr>
+            </table>
+        </div>
+
+        <p>Between uniform hemisphere sampling and lighting sampling, lighting sampling produces a clearer picture with significantly less noise per pixel. This is because with lighting sampling, we guarantee that the sampled ray comes from a light source and not a random point in the scene, meaning each ray that contributes to the lighting/shadows is more significant than a random ray along a hemisphere.</p>
+
+    <h2 align="middle">Part 4: Global Illumination</h2>
+        <p>For the zero bounce case, the irradiance is simply the emission of the bsdf. The one bounce case is direct illumination. For at least one bounce, I first sample the bsdf and check termination conditions - recursion depth and Russian roulette with probability 0.3. If the recursion does not terminate, I cast a ray from the bsdf sample, check for intersections, and recurse on the intersection point if the ray hits something. Upon termination, return the direct illumination value of the current recursion level.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres.png" width="480px" />
+                    <figcaption align="middle">Global Illumination: Spheres</figcaption>
+                    <td align="middle">
+                    <img src="images/4bunny.png" width="480px" />
+                    <figcaption align="middle">Global Illumination: Bunny</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres_dl.png" width="480px" />
+                    <figcaption align="middle">Direct Illumination: Spheres</figcaption>
+                    <td align="middle">
+                    <img src="images/4spheres_il.png" width="480px" />
+                    <figcaption align="middle">Indirect Illumination: Spheres</figcaption>
+                </tr>
+            </table>
+        </div>
+
+        <p>Changing ray recursive depth:</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/4bunny0.png" width="480px" />
+                    <figcaption align="middle">Bunny: depth 0</figcaption>
+                    <td align="middle">
+                    <img src="images/4bunny1.png" width="480px" />
+                    <figcaption align="middle">Bunny: depth 1</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4bunny2.png" width="480px" />
+                    <figcaption align="middle">Bunny: depth 2</figcaption>
+                    <td align="middle">
+                    <img src="images/4bunny3.png" width="480px" />
+                    <figcaption align="middle">Bunny: depth 3</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4bunny100.png" width="480px" />
+                    <figcaption align="middle">Bunny: depth 100</figcaption>
+                </tr>
+            </table>
+        </div>
+
+        <p>Changing sample rate:</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres_1.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 1</figcaption>
+                    <td align="middle">
+                    <img src="images/4spheres_2.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 2</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres_4.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 4</figcaption>
+                    <td align="middle">
+                    <img src="images/4spheres_8.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 8</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres_16.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 16</figcaption>
+                    <td align="middle">
+                    <img src="images/4spheres_64.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 64</figcaption>
+                </tr>
+                <br>
+                <tr>
+                    <td align="middle">
+                    <img src="images/4spheres_1024.png" width="480px" />
+                    <figcaption align="middle">Spheres: rate 1024</figcaption>
+                </tr>
+            </table>
+        </div>
+
+    <h2 align="middle">Part 5: Adaptive Sampling</h2>
+        <p>For adaptive sampling, I simply added a segment for computing the statistics in the raytrace pixel loop. When the estimated radiance returns, I get the sample's illuminance and keep a running sum and running squared sum. After each batch of samples, I compute the mean, variance, and convergence condition. If the approximate convergence is achieved within num_samples, we update the sampleCountBuffer and return the appropriate Spectrum average.</p>
+
+        <p>Bunny with 2048 samples, 64 samples per batch with 0.05 tolerance, 1 light ray, and 5 depth.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/bunny.png" width="480px" />
+                    <figcaption align="middle">Bunny</figcaption>
+                    <td align="middle">
+                    <img src="images/bunny_rate.png" width="480px" />
+                    <figcaption align="middle">Sample Count</figcaption>
+                </tr>
+            </table>
+        </div>
+</div>
+</body>
+</html>
+
+
+
+
